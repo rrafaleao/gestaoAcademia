@@ -27,7 +27,7 @@ class RegisterFrame(ctk.CTkFrame):
         # Título
         label_titulo = ctk.CTkLabel(
             self.content_frame,
-            text="Fazer Registro",
+            text="Registro de Usuário",
             font=ctk.CTkFont(family="Barlow", size=24, weight="bold"),
             text_color="black"
         )
@@ -70,6 +70,43 @@ class RegisterFrame(ctk.CTkFrame):
         )
         self.entry_senha.pack(pady=10)
         
+        # Tipo de acesso
+        self.nivel_acesso_var = StringVar(value="funcionario")
+        
+        acesso_frame = ctk.CTkFrame(
+            self.content_frame,
+            fg_color="transparent"
+        )
+        acesso_frame.pack(pady=10)
+        
+        acesso_label = ctk.CTkLabel(
+            acesso_frame,
+            text="Nível de Acesso:",
+            text_color="black"
+        )
+        acesso_label.pack(side="left", padx=(0, 10))
+        
+        # Radio buttons para nível de acesso
+        radio_funcionario = ctk.CTkRadioButton(
+            acesso_frame,
+            text="Funcionário",
+            variable=self.nivel_acesso_var,
+            value="funcionario",
+            text_color="black",
+            fg_color="#5A189A"
+        )
+        radio_funcionario.pack(side="left", padx=5)
+        
+        radio_admin = ctk.CTkRadioButton(
+            acesso_frame,
+            text="Administrador",
+            variable=self.nivel_acesso_var,
+            value="admin",
+            text_color="black",
+            fg_color="#5A189A"
+        )
+        radio_admin.pack(side="left", padx=5)
+        
         # Botão de registro
         btn_registrar = ctk.CTkButton(
             self.content_frame,
@@ -87,7 +124,7 @@ class RegisterFrame(ctk.CTkFrame):
         # Botão para ir para login
         btn_login = ctk.CTkButton(
             self.content_frame,
-            text="Já tem uma conta?",
+            text="Fazer Login",
             fg_color="#9D4EDD",
             hover_color="#7B2CBF",
             width=300,
