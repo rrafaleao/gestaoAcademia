@@ -1,13 +1,13 @@
-# database/db_connection.py
 import mysql.connector
 from mysql.connector import Error
 
 class GerenciadorBancoDados:
-    def __init__(self, host="localhost", usuario="root", senha="", banco="gestao_academia"):
+    def __init__(self, host="ivvdi.h.filess.io", usuario="gestaoAcademia_fewerfully", senha="d02b041498b5d3807d4095c30ae7e1e90b7777db", banco="gestaoAcademia_fewerfully", porta=3307):
         self.host = host
         self.usuario = usuario
         self.senha = senha
         self.banco = banco
+        self.porta = porta
         self.conexao = None
         self.cursor = None
     
@@ -18,12 +18,17 @@ class GerenciadorBancoDados:
                 host=self.host,
                 user=self.usuario,
                 password=self.senha,
-                database=self.banco
+                database=self.banco,
+                port=self.porta
             )
             
             if self.conexao.is_connected():
                 self.cursor = self.conexao.cursor()
-                print("Conexão com o banco de dados estabelecida com sucesso.")
+                db_info = self.conexao.get_server_info()
+                print(f"Conectado ao MySQL Server versão {db_info}")
+                self.cursor.execute("SELECT DATABASE();")
+                record = self.cursor.fetchone()
+                print(f"Você está conectado ao banco de dados: {record}")
                 return True
         except Error as e:
             print(f"Erro ao conectar ao banco de dados: {e}")
