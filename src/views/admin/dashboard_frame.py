@@ -1,8 +1,6 @@
-# views/main/main_screen.py
 import customtkinter as ctk
-from PIL import Image, ImageTk
-import os
 from tkinter import messagebox
+from datetime import datetime
 
 class MainScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -10,8 +8,7 @@ class MainScreen(ctk.CTkFrame):
         
         self.controller = controller
         self.current_frame = None
-        
-        # Configuração de fontes
+
         try:
             self.title_font = ctk.CTkFont(family="Barlow", size=24, weight="bold")
             self.sidebar_font = ctk.CTkFont(family="Barlow", size=16, weight="bold")
@@ -21,15 +18,11 @@ class MainScreen(ctk.CTkFrame):
             self.title_font = ("Arial", 24, "bold")
             self.sidebar_font = ("Arial", 16, "bold")
             self.content_font = ("Arial", 14)
-        
-        # Criação da estrutura principal
         self.create_layout()
-        
-        # Por padrão, exibe o dashboard
+
         self.mostrar_conteudo("dashboard")
     
     def create_layout(self):
-        # Layout principal com sidebar e área de conteúdo
         self.sidebar = self.create_sidebar()
         self.sidebar.pack(side="left", fill="y")
         
@@ -37,14 +30,11 @@ class MainScreen(ctk.CTkFrame):
         self.content_area.pack(side="right", fill="both", expand=True, padx=20, pady=20)
 
     def create_sidebar(self):
-        # Frame da sidebar
         sidebar = ctk.CTkFrame(self, fg_color="#5A189A", width=250, corner_radius=0)
         
-        # Logo da academia no topo
         logo_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
         logo_frame.pack(pady=20)
         
-        # Aqui seria carregado o logo da academia
         logo_label = ctk.CTkLabel(
             logo_frame,
             text="FITPRO",
@@ -60,12 +50,10 @@ class MainScreen(ctk.CTkFrame):
             text_color="white"
         )
         slogan_label.pack()
-        
-        # Separador
+
         separator = ctk.CTkFrame(sidebar, height=2, fg_color="#9D4EDD")
         separator.pack(fill="x", padx=20, pady=10)
         
-        # Itens do menu
         menu_items = [
             {"id": "dashboard", "text": "Dashboard", "icon": "dashboard.png"},
             {"id": "alunos", "text": "Alunos", "icon": "users.png"},
@@ -79,11 +67,9 @@ class MainScreen(ctk.CTkFrame):
         for item in menu_items:
             self.create_menu_item(sidebar, item)
         
-        # Separador
         separator = ctk.CTkFrame(sidebar, height=2, fg_color="#9D4EDD")
         separator.pack(fill="x", padx=20, pady=10)
         
-        # Informações do usuário logado
         user_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
         user_frame.pack(pady=10, padx=20, fill="x")
         
@@ -97,13 +83,12 @@ class MainScreen(ctk.CTkFrame):
         
         user_name = ctk.CTkLabel(
             user_frame,
-            text="Nome do Usuário",
+            text="Usuário",
             font=self.sidebar_font,
             text_color="white"
         )
         user_name.pack(anchor="w")
         
-        # Botão de logout
         logout_btn = ctk.CTkButton(
             sidebar,
             text="Sair",
@@ -122,9 +107,7 @@ class MainScreen(ctk.CTkFrame):
     def create_menu_item(self, sidebar, item):
         item_frame = ctk.CTkFrame(sidebar, fg_color="transparent")
         item_frame.pack(pady=5, padx=20, fill="x")
-        
-        # Aqui você carregaria o ícone com PIL
-        # Para exemplo, estamos criando apenas o botão sem o ícone
+
         item_btn = ctk.CTkButton(
             item_frame,
             text=item["text"],
@@ -141,11 +124,9 @@ class MainScreen(ctk.CTkFrame):
         item_btn.pack(fill="x")
     
     def mostrar_conteudo(self, content_id):
-        # Limpa o conteúdo atual
         for widget in self.content_area.winfo_children():
             widget.destroy()
         
-        # Título do conteúdo
         content_title_map = {
             "dashboard": "Dashboard",
             "alunos": "Gestão de Alunos",
@@ -155,8 +136,7 @@ class MainScreen(ctk.CTkFrame):
             "relatorios": "Relatórios",
             "configuracoes": "Configurações"
         }
-        
-        # Título da seção
+
         title_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         title_frame.pack(fill="x", pady=10)
         
@@ -167,28 +147,22 @@ class MainScreen(ctk.CTkFrame):
             text_color="black"
         )
         title_label.pack(anchor="w")
-        
-        # Linha separadora
+
         separator = ctk.CTkFrame(self.content_area, height=2, fg_color="#5A189A")
         separator.pack(fill="x", pady=10)
-        
-        # Conteúdo específico para cada seção
+
         if content_id == "dashboard":
             self.criar_dashboard()
         elif content_id == "alunos":
             self.criar_secao_alunos()
-        # Implemente outras seções conforme necessário
     
     def criar_dashboard(self):
-        # Grid para os cards de resumo
         grid_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         grid_frame.pack(fill="both", expand=True, pady=20)
         
-        # Configurar o grid com 2 colunas
         grid_frame.columnconfigure(0, weight=1)
         grid_frame.columnconfigure(1, weight=1)
-        
-        # Cards de resumo
+
         cards_info = [
             {"title": "Total de Alunos", "value": "152", "color": "#9D4EDD"},
             {"title": "Mensalidades Pendentes", "value": "28", "color": "#E63946"},
@@ -196,12 +170,10 @@ class MainScreen(ctk.CTkFrame):
             {"title": "Novos Cadastros", "value": "7", "color": "#2A9D8F"}
         ]
         
-        # Criar os cards em grid
         for i, card in enumerate(cards_info):
             row, col = divmod(i, 2)
             self.criar_card_resumo(grid_frame, card, row, col)
-        
-        # Seção de atividades recentes
+ 
         recent_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         recent_frame.pack(fill="both", expand=True, pady=20)
         
@@ -213,7 +185,6 @@ class MainScreen(ctk.CTkFrame):
         )
         recent_label.pack(anchor="w", pady=10)
         
-        # Lista de atividades recentes
         activities = [
             "João Silva fez check-in às 08:30",
             "Maria Oliveira pagou mensalidade de Fevereiro",
@@ -255,10 +226,12 @@ class MainScreen(ctk.CTkFrame):
         title_label.pack(pady=(5, 20))
     
     def criar_secao_alunos(self):
-        # Exemplo de implementação para a seção de alunos
+        self.form_visible = False
+        self.table_visible = True
+
         actions_frame = ctk.CTkFrame(self.content_area, fg_color="transparent")
         actions_frame.pack(fill="x", pady=10)
-        
+
         search_entry = ctk.CTkEntry(
             actions_frame,
             placeholder_text="Buscar aluno...",
@@ -283,6 +256,9 @@ class MainScreen(ctk.CTkFrame):
             corner_radius=10
         )
         search_btn.pack(side="left", padx=5)
+
+        self.alunos_container = ctk.CTkFrame(self.content_area, fg_color="transparent")
+        self.alunos_container.pack(fill="both", expand=True, pady=10)
         
         add_btn = ctk.CTkButton(
             actions_frame,
@@ -292,15 +268,29 @@ class MainScreen(ctk.CTkFrame):
             width=150,
             height=40,
             font=self.content_font,
-            corner_radius=10
+            corner_radius=10,
+            command=self.toggle_form_aluno
         )
         add_btn.pack(side="right", padx=5)
+
+        self.mostrar_tabela_alunos()
+    
+    def toggle_form_aluno(self):
+        """Alterna entre a visualização do formulário e da tabela de alunos"""
+        if self.form_visible:
+            self.form_visible = False
+            self.mostrar_tabela_alunos()
+        else:
+            self.form_visible = True
+            self.mostrar_formulario_aluno()
+    
+    def mostrar_tabela_alunos(self):
+        for widget in self.alunos_container.winfo_children():
+            widget.destroy()
         
-        # Tabela de alunos (simulação)
-        table_frame = ctk.CTkFrame(self.content_area, fg_color="white", corner_radius=10, border_width=1, border_color="#E0E0E0")
-        table_frame.pack(fill="both", expand=True, pady=20)
-        
-        # Cabeçalho da tabela
+        table_frame = ctk.CTkFrame(self.alunos_container, fg_color="white", corner_radius=10, border_width=1, border_color="#E0E0E0")
+        table_frame.pack(fill="both", expand=True)
+
         header_frame = ctk.CTkFrame(table_frame, fg_color="#F0F0F0", corner_radius=0)
         header_frame.pack(fill="x")
         
@@ -315,7 +305,6 @@ class MainScreen(ctk.CTkFrame):
             )
             header_label.grid(row=0, column=i, padx=10, pady=10, sticky="w")
         
-        # Dados da tabela (exemplo)
         alunos_exemplo = [
             {"id": "001", "nome": "João Silva", "plano": "Mensal", "vencimento": "15/03/2025", "status": "Ativo"},
             {"id": "002", "nome": "Maria Oliveira", "plano": "Trimestral", "vencimento": "22/04/2025", "status": "Ativo"},
@@ -328,15 +317,13 @@ class MainScreen(ctk.CTkFrame):
             row_bg = "#FFFFFF" if row_idx % 2 == 0 else "#F8F9FA"
             row_frame = ctk.CTkFrame(table_frame, fg_color=row_bg, corner_radius=0, height=40)
             row_frame.pack(fill="x")
-            
-            # Status color
+
             status_color = {
                 "Ativo": "#4CAF50",
                 "Inativo": "#F44336",
                 "Pendente": "#FFC107"
             }.get(aluno["status"], "#757575")
-            
-            # Dados da linha
+
             ctk.CTkLabel(row_frame, text=aluno["id"], text_color="black", width=100).grid(row=0, column=0, padx=10, pady=10, sticky="w")
             ctk.CTkLabel(row_frame, text=aluno["nome"], text_color="black", width=100).grid(row=0, column=1, padx=10, pady=10, sticky="w")
             ctk.CTkLabel(row_frame, text=aluno["plano"], text_color="black", width=100).grid(row=0, column=2, padx=10, pady=10, sticky="w")
@@ -372,6 +359,136 @@ class MainScreen(ctk.CTkFrame):
                 corner_radius=5
             )
             del_btn.pack(side="left", padx=2)
+    
+    def mostrar_formulario_aluno(self):
+        for widget in self.alunos_container.winfo_children():
+            widget.destroy()
+        
+        form_frame = ctk.CTkFrame(self.alunos_container, fg_color="white", corner_radius=10, border_width=1, border_color="#E0E0E0")
+        form_frame.pack(fill="both", expand=True, padx=10, pady=10)
+
+        form_title = ctk.CTkLabel(
+            form_frame,
+            text="Cadastro de Novo Aluno",
+            font=self.sidebar_font,
+            text_color="#5A189A"
+        )
+        form_title.pack(pady=20)
+        
+        fields_container = ctk.CTkFrame(form_frame, fg_color="transparent")
+        fields_container.pack(fill="both", expand=True, padx=30, pady=10)
+
+        fields_container.columnconfigure(0, weight=1)
+        fields_container.columnconfigure(1, weight=1)
+        
+        self.criar_campo_formulario(fields_container, 0, 0, "Nome Completo:", "nome")
+        self.criar_campo_formulario(fields_container, 0, 1, "Telefone:", "telefone", placeholder="(00) 00000-0000")
+        self.criar_campo_formulario(fields_container, 1, 0, "E-mail:", "email", placeholder="exemplo@email.com")
+        self.criar_campo_formulario(fields_container, 1, 1, "Endereço:", "endereco")
+        self.criar_campo_formulario(fields_container, 2, 0, "Data de Nascimento:", "data_nascimento", placeholder="DD/MM/AAAA")
+        self.criar_campo_formulario(fields_container, 2, 1, "Data de Início:", "data_inicio", placeholder="DD/MM/AAAA", default=datetime.now().strftime("%d/%m/%Y"))
+        
+        plano_frame = ctk.CTkFrame(fields_container, fg_color="transparent")
+        plano_frame.grid(row=3, column=0, columnspan=2, sticky="ew", padx=10, pady=(20, 10))
+        
+        plano_label = ctk.CTkLabel(
+            plano_frame,
+            text="Plano:",
+            font=self.content_font,
+            text_color="black"
+        )
+        plano_label.pack(anchor="w", pady=(0, 5))
+        
+        planos_opcoes = ["Mensal", "Trimestral", "Semestral", "Anual"]
+        plano_var = ctk.StringVar(value=planos_opcoes[0])
+        
+        planos_container = ctk.CTkFrame(plano_frame, fg_color="transparent")
+        planos_container.pack(fill="x")
+        
+        for i, plano in enumerate(planos_opcoes):
+            radio = ctk.CTkRadioButton(
+                planos_container,
+                text=plano,
+                variable=plano_var,
+                value=plano,
+                font=self.content_font,
+                fg_color="#5A189A",
+                hover_color="#3C096C"
+            )
+            radio.pack(side="left", padx=20)
+        
+        # Botões de ação
+        buttons_frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+        buttons_frame.pack(fill="x", pady=30, padx=30)
+        
+        cancel_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Cancelar",
+            fg_color="#E0E0E0",
+            hover_color="#BDBDBD",
+            text_color="black",
+            width=150,
+            height=40,
+            font=self.content_font,
+            corner_radius=10,
+            command=self.toggle_form_aluno
+        )
+        cancel_btn.pack(side="left", padx=5)
+        
+        save_btn = ctk.CTkButton(
+            buttons_frame,
+            text="Salvar",
+            fg_color="#2A9D8F",
+            hover_color="#1F7A6F",
+            width=150,
+            height=40,
+            font=self.content_font,
+            corner_radius=10,
+            command=self.salvar_aluno
+        )
+        save_btn.pack(side="right", padx=5)
+    
+    def criar_campo_formulario(self, parent, row, col, label_text, field_name, placeholder="", default=""):
+        """Cria um campo de formulário com label e entrada"""
+        field_frame = ctk.CTkFrame(parent, fg_color="transparent")
+        field_frame.grid(row=row, column=col, sticky="ew", padx=10, pady=10)
+        
+        label = ctk.CTkLabel(
+            field_frame,
+            text=label_text,
+            font=self.content_font,
+            text_color="black"
+        )
+        label.pack(anchor="w", pady=(0, 5))
+        
+        entry = ctk.CTkEntry(
+            field_frame,
+            placeholder_text=placeholder,
+            width=300,
+            height=40,
+            fg_color="white",
+            text_color="black",
+            corner_radius=5,
+            border_color="#5A189A",
+            border_width=1
+        )
+        if default:
+            entry.insert(0, default)
+        entry.pack(fill="x")
+        
+        setattr(self, f"entry_{field_name}", entry)
+    
+    def salvar_aluno(self):
+        dados = {}
+        campos = ["nome", "telefone", "email", "endereco", "data_nascimento", "data_inicio"]
+        
+        for campo in campos:
+            entry = getattr(self, f"entry_{campo}")
+            dados[campo] = entry.get()
+
+        messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+        
+        self.toggle_form_aluno()
     
     def logout(self):
         """Realiza o logout do usuário"""

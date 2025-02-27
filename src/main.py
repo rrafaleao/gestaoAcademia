@@ -1,7 +1,6 @@
-# main_app.py
 import customtkinter as ctk
 from database.db_connection import GerenciadorBancoDados
-from controller.user_controller import UserController
+from controller.auth.auth_controller import UserController
 from views.auth.login_frame import LoginFrame
 from views.auth.register_frame import RegisterFrame
 from views.admin.dashboard_frame import MainScreen
