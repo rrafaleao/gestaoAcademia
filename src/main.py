@@ -1,6 +1,7 @@
 import customtkinter as ctk
 from database.db_connection import GerenciadorBancoDados
 from controller.auth.auth_controller import UserController
+from controller.admin.admin_controller import AdminController
 from views.auth.login_frame import LoginFrame
 from views.auth.register_frame import RegisterFrame
 from views.admin.dashboard_frame import MainScreen
@@ -11,6 +12,7 @@ class MainApp:
         self.db_management.conectar()
         
         self.user_controller = UserController(self.db_management)
+        self.admin_controller = AdminController(self.db_management)
 
         self.root = ctk.CTk()
         self.root.title("Academia - Sistema de Gestão")

@@ -1,6 +1,8 @@
 import customtkinter as ctk
 from tkinter import messagebox
 from datetime import datetime
+from datetime import timedelta
+from dateutil.relativedelta import relativedelta
 
 class MainScreen(ctk.CTkFrame):
     def __init__(self, parent, controller):
@@ -400,7 +402,7 @@ class MainScreen(ctk.CTkFrame):
         plano_label.pack(anchor="w", pady=(0, 5))
         
         planos_opcoes = ["Mensal", "Trimestral", "Semestral", "Anual"]
-        plano_var = ctk.StringVar(value=planos_opcoes[0])
+        self.plano_var = ctk.StringVar(value=planos_opcoes[0])  # Guardando a referência como atributo da classe
         
         planos_container = ctk.CTkFrame(plano_frame, fg_color="transparent")
         planos_container.pack(fill="x")
@@ -409,7 +411,7 @@ class MainScreen(ctk.CTkFrame):
             radio = ctk.CTkRadioButton(
                 planos_container,
                 text=plano,
-                variable=plano_var,
+                variable=self.plano_var,
                 value=plano,
                 font=self.content_font,
                 fg_color="#5A189A",
@@ -479,17 +481,198 @@ class MainScreen(ctk.CTkFrame):
         setattr(self, f"entry_{field_name}", entry)
     
     def salvar_aluno(self):
-        dados = {}
+        """
+        Coleta os dados do formulário e salva o novo aluno no banco de dados
+        utilizando o AdminController.
+        """
+        # Obter todos os dados do formulário
         campos = ["nome", "telefone", "email", "endereco", "data_nascimento", "data_inicio"]
+        cliente_data = {}
         
+        # Verificar se todos os campos obrigatórios foram preenchidos
+        campos_vazios = []
         for campo in campos:
             entry = getattr(self, f"entry_{campo}")
-            dados[campo] = entry.get()
-
-        messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+            valor = entry.get().strip()
+            
+            if not valor and campo != "email":  # Email pode ser opcional
+                campos_vazios.append(campo)
+            
+            cliente_data[campo] = valor
         
-        self.toggle_form_aluno()
+        # Obter o plano selecionado
+        cliente_data["plano"] = self.plano_var.get()
+        
+        # Validar se há campos obrigatórios vazios
+        if campos_vazios:
+            campos_formatados = ", ".join(campos_vazios).replace("_", " ")
+            messagebox.showerror("Erro", f"Os seguintes campos são obrigatórios: {campos_formatados}")
+            return
+        
+        # Formatar as datas para o formato SQL
+        for campo_data in ["data_nascimento", "data_inicio"]:
+            data_formatada = self.controller.admin_controller.formatar_data_para_sql(cliente_data[campo_data])
+            if not data_formatada:
+                messagebox.showerror("Erro", f"Formato de data inválido em {campo_data.replace('_', ' ')}. Use DD/MM/AAAA.")
+                return
+            cliente_data[campo_data] = data_formatada
+        
+        # Salvar no banco de dados utilizando o AdminController
+        sucesso = self.controller.admin_controller.adicionar_cliente(cliente_data)
+        
+        if sucesso:
+            messagebox.showinfo("Sucesso", "Aluno cadastrado com sucesso!")
+            self.toggle_form_aluno()  # Voltar para a tabela de alunos
+        else:
+            messagebox.showerror("Erro", "Não foi possível cadastrar o aluno. Verifique os dados e tente novamente.")
     
+    def atualizar_tabela_alunos(self):
+        """
+        Atualiza a tabela de alunos com os dados mais recentes do banco de dados.
+        """
+        # Limpar a tabela atual
+        for widget in self.alunos_container.winfo_children():
+            widget.destroy()
+        
+        # Recriar o frame da tabela
+        table_frame = ctk.CTkFrame(self.alunos_container, fg_color="white", corner_radius=10, border_width=1, border_color="#E0E0E0")
+        table_frame.pack(fill="both", expand=True)
+
+        header_frame = ctk.CTkFrame(table_frame, fg_color="#F0F0F0", corner_radius=0)
+        header_frame.pack(fill="x")
+        
+        headers = ["ID", "Nome", "Plano", "Vencimento", "Status", "Ações"]
+        for i, header in enumerate(headers):
+            header_label = ctk.CTkLabel(
+                header_frame,
+                text=header,
+                font=self.sidebar_font,
+                text_color="black",
+                width=100
+            )
+            header_label.grid(row=0, column=i, padx=10, pady=10, sticky="w")
+        
+        # Obter todos os clientes do banco de dados usando o AdminController
+        alunos = self.controller.admin_controller.obter_todos_clientes()
+        
+        # Se não houver alunos, mostrar mensagem
+        if not alunos:
+            no_data_frame = ctk.CTkFrame(table_frame, fg_color="#F8F9FA", corner_radius=0)
+            no_data_frame.pack(fill="x")
+            
+            no_data_label = ctk.CTkLabel(
+                no_data_frame,
+                text="Nenhum aluno cadastrado.",
+                font=self.content_font,
+                text_color="#757575"
+            )
+            no_data_label.pack(pady=30)
+            return
+        
+        # Preencher a tabela com os dados dos alunos
+        for row_idx, aluno in enumerate(alunos, start=1):
+            row_bg = "#FFFFFF" if row_idx % 2 == 0 else "#F8F9FA"
+            row_frame = ctk.CTkFrame(table_frame, fg_color=row_bg, corner_radius=0, height=40)
+            row_frame.pack(fill="x")
+            
+            # Determinar status com base em alguma lógica (por exemplo, data de vencimento)
+            hoje = datetime.now().date()
+            data_inicio = datetime.strptime(str(aluno["data_inicio"]), "%Y-%m-%d").date()
+            status = "Ativo"  # Por padrão, consideramos o aluno como ativo
+            
+            # Definir cor do status
+            status_color = {
+                "Ativo": "#4CAF50",
+                "Inativo": "#F44336",
+                "Pendente": "#FFC107"
+            }.get(status, "#757575")
+            
+            # Calcular data de vencimento com base no plano e data de início
+            vencimento = self.calcular_vencimento(data_inicio, aluno["plano"])
+            
+            # Mostrar os dados do aluno na tabela
+            ctk.CTkLabel(row_frame, text=str(aluno["id"]), text_color="black", width=100).grid(row=0, column=0, padx=10, pady=10, sticky="w")
+            ctk.CTkLabel(row_frame, text=aluno["nome"], text_color="black", width=100).grid(row=0, column=1, padx=10, pady=10, sticky="w")
+            ctk.CTkLabel(row_frame, text=aluno["plano"], text_color="black", width=100).grid(row=0, column=2, padx=10, pady=10, sticky="w")
+            ctk.CTkLabel(row_frame, text=vencimento.strftime("%d/%m/%Y"), text_color="black", width=100).grid(row=0, column=3, padx=10, pady=10, sticky="w")
+            
+            status_frame = ctk.CTkFrame(row_frame, fg_color=status_color, corner_radius=5, width=80, height=25)
+            status_frame.grid(row=0, column=4, padx=10, pady=10)
+            ctk.CTkLabel(status_frame, text=status, text_color="white", font=("Arial", 12)).pack(pady=2)
+            
+            # Botões de ação
+            actions_frame = ctk.CTkFrame(row_frame, fg_color="transparent")
+            actions_frame.grid(row=0, column=5, padx=10, pady=5)
+            
+            edit_btn = ctk.CTkButton(
+                actions_frame,
+                text="Editar",
+                fg_color="#5A189A",
+                hover_color="#3C096C",
+                width=70,
+                height=30,
+                font=("Arial", 12),
+                corner_radius=5,
+                command=lambda aluno_id=aluno["id"]: self.editar_aluno(aluno_id)
+            )
+            edit_btn.pack(side="left", padx=2)
+            
+            del_btn = ctk.CTkButton(
+                actions_frame,
+                text="Excluir",
+                fg_color="#E63946",
+                hover_color="#C1121F",
+                width=70,
+                height=30,
+                font=("Arial", 12),
+                corner_radius=5,
+                command=lambda aluno_id=aluno["id"]: self.excluir_aluno(aluno_id)
+            )
+            del_btn.pack(side="left", padx=2)
+
+    def calcular_vencimento(self, data_inicio, plano):
+        """
+        Calcula a data de vencimento com base na data de início e no plano.
+        
+        Args:
+            data_inicio (datetime.date): Data de início do plano
+            plano (str): Tipo de plano (Mensal, Trimestral, Semestral, Anual)
+        
+        Returns:
+            datetime.date: Data de vencimento
+        """
+        
+        if plano == "Mensal":
+            return data_inicio + relativedelta(months=1)
+        elif plano == "Trimestral":
+            return data_inicio + relativedelta(months=3)
+        elif plano == "Semestral":
+            return data_inicio + relativedelta(months=6)
+        elif plano == "Anual":
+            return data_inicio + relativedelta(years=1)
+        else:
+            return data_inicio + relativedelta(months=1)  # Padrão: mensal
+        
+    
+    def buscar_cliente_por_id(self, cliente_id):
+        """
+        Busca um cliente pelo ID.
+        
+        Args:
+            cliente_id (int): ID do cliente a ser buscado.
+        
+        Returns:
+            list: Lista contendo um dicionário com os dados do cliente, ou lista vazia se não encontrado.
+        """
+        query = "SELECT * FROM clientes WHERE id = %s"
+        resultados = self.db.executar_consulta(query, (cliente_id,))
+        
+        if resultados:
+            colunas = ['id', 'nome', 'telefone', 'email', 'endereco', 'data_nascimento', 'data_inicio', 'plano']
+            clientes = [dict(zip(colunas, cliente)) for cliente in resultados]
+            return clientes
+        return []
+
     def logout(self):
         """Realiza o logout do usuário"""
         if messagebox.askyesno("Logout", "Deseja realmente sair?"):
