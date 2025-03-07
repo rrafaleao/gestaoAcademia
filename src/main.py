@@ -4,7 +4,8 @@ from controller.auth.auth_controller import UserController
 from controller.admin.admin_controller import AdminController
 from views.auth.login_frame import LoginFrame
 from views.auth.register_frame import RegisterFrame
-from views.admin.dashboard_frame import MainScreen
+from views.admin.dashboard import DashboardFrame  # Correção no import
+from views.admin.add_student import MembersFrame  # Import do MembersFrame
 
 class MainApp:
     def __init__(self):
@@ -34,27 +35,29 @@ class MainApp:
     def inicializar_frames(self):
         login_frame = LoginFrame(self.container, self)
         register_frame = RegisterFrame(self.container, self)
-        dashboard_frame = MainScreen(self.container, self)
+        dashboard_frame = DashboardFrame(self.container, self)  # Nome corrigido
+        members_frame = MembersFrame(self.container, self)  # Adicionado
         
         self.frames["login"] = login_frame
         self.frames["register"] = register_frame
         self.frames["dashboard"] = dashboard_frame
+        self.frames["members"] = members_frame  # Registrando o frame de membros
 
-        login_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
-        register_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
-        dashboard_frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
+        # Configuração do place para todos os frames
+        for frame in self.frames.values():
+            frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
     
     def mostrar_frame(self, nome_frame):
         for frame in self.frames.values():
             frame.place_forget()
         
-        frame = self.frames[nome_frame]
-        frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
+        frame = self.frames.get(nome_frame)
+        if frame:
+            frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
     
     def iniciar_interface_principal(self, usuario=None):
         self.usuario_atual = usuario
         self.mostrar_frame("dashboard")
-        print(f"Interface principal iniciada para: {usuario['nome'] if usuario else 'Usuário não identificado'}")
     
     def executar(self):
         self.root.mainloop()
