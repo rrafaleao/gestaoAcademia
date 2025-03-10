@@ -4,8 +4,8 @@ from controller.auth.auth_controller import UserController
 from controller.admin.admin_controller import AdminController
 from views.auth.login_frame import LoginFrame
 from views.auth.register_frame import RegisterFrame
-from views.admin.dashboard import DashboardFrame  # Correção no import
-from views.admin.add_student import MembersFrame  # Import do MembersFrame
+from views.admin.dashboard import DashboardFrame
+from views.admin.add_student import AlunosFrame
 
 class MainApp:
     def __init__(self):
@@ -35,15 +35,14 @@ class MainApp:
     def inicializar_frames(self):
         login_frame = LoginFrame(self.container, self)
         register_frame = RegisterFrame(self.container, self)
-        dashboard_frame = DashboardFrame(self.container, self)  # Nome corrigido
-        members_frame = MembersFrame(self.container, self)  # Adicionado
+        dashboard_frame = DashboardFrame(self.container, self)
+        members_frame = AlunosFrame(self.container, self)
         
         self.frames["login"] = login_frame
         self.frames["register"] = register_frame
         self.frames["dashboard"] = dashboard_frame
-        self.frames["members"] = members_frame  # Registrando o frame de membros
+        self.frames["members"] = members_frame
 
-        # Configuração do place para todos os frames
         for frame in self.frames.values():
             frame.place(relx=0.5, rely=0.5, anchor="center", relwidth=1, relheight=1)
     

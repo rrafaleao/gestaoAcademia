@@ -296,7 +296,6 @@ class DashboardFrame(ctk.CTkFrame):
         footer_text.pack()
     
     def criar_botao_menu(self, texto, indice, ativo=False):
-        """Cria um botão na sidebar com estilização adequada"""
         bg_color = "#9D4EDD" if ativo else "transparent"
         fg_color = "white" if ativo else "#E0E0E0"
         
@@ -311,10 +310,16 @@ class DashboardFrame(ctk.CTkFrame):
             width=220,
             corner_radius=8,
             font=self.barlow_font,
-            command=lambda t=texto: print(f"Menu {t} clicado")
+            command=lambda t=texto: self.navegacao_menu(t) 
         )
         btn.pack(pady=5, padx=15)
         return btn
+    
+    def navegacao_menu(self, texto):
+        if texto == "Membros" and self.controller:
+            self.controller.mostrar_frame("members")
+        elif texto == "Dashboard" and self.controller:
+            self.controller.mostrar_frame("dashboard")
     
     def create_large_metric_card(self, parent, row, column, title, value, subtitle, color, icon_type=None):
         """Cria um card grande para métricas principais"""
@@ -381,18 +386,3 @@ class DashboardFrame(ctk.CTkFrame):
                 text_color=color
             )
             icon_label.place(relx=0.5, rely=0.5, anchor="center")
-
-
-if __name__ == "__main__":
-    app = ctk.CTk()
-    app.title("Sistema de Gestão de Academia")
-    app.geometry("1200x700")
-    
-    class MockController:
-        def mostrar_frame(self, frame_name):
-            print(f"Mudando para tela: {frame_name}")
-    
-    dashboard = DashboardFrame(app, MockController())
-    dashboard.pack(fill="both", expand=True)
-    
-    app.mainloop()

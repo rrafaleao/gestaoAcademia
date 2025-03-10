@@ -1,7 +1,9 @@
 import customtkinter as ctk
-from tkinter import ttk, messagebox
+from tkinter import ttk, StringVar
+import datetime
+from tkcalendar import DateEntry
 
-class MembersFrame(ctk.CTkFrame):
+class AlunosFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F0F0F0", corner_radius=0)
         
@@ -49,7 +51,7 @@ class MembersFrame(ctk.CTkFrame):
         
         # Itens do menu
         self.criar_botao_menu("Dashboard", 0)
-        self.criar_botao_menu("Membros", 1, True)  # "Membros" é marcado como ativo nesta tela
+        self.criar_botao_menu("Membros", 1, True)
         self.criar_botao_menu("Planos", 2)
         self.criar_botao_menu("Pagamentos", 3)
         self.criar_botao_menu("Agenda", 4)
@@ -111,517 +113,439 @@ class MembersFrame(ctk.CTkFrame):
         )
         logout_button.pack(pady=5)
         
-        # Área de conteúdo principal
-        self.content_frame = ctk.CTkFrame(
+        # Área principal de conteúdo
+        self.main_content = ctk.CTkFrame(
             self,
-            fg_color="#F0F0F0",
-            corner_radius=0
-        )
-        self.content_frame.grid(row=0, column=1, sticky="nsew", padx=20, pady=20)
-        self.content_frame.grid_columnconfigure(0, weight=1)
-        self.content_frame.grid_rowconfigure(1, weight=1)
-        
-        # Cabeçalho da área de conteúdo
-        header_frame = ctk.CTkFrame(
-            self.content_frame,
-            fg_color="transparent"
-        )
-        header_frame.grid(row=0, column=0, sticky="ew", pady=(0, 20))
-        
-        # Título da página
-        page_title = ctk.CTkLabel(
-            header_frame,
-            text="Membros",
-            font=self.title_font,
-            text_color="black"
-        )
-        page_title.pack(side="left")
-        
-        # Botão Adicionar Novo Membro
-        add_button = ctk.CTkButton(
-            header_frame,
-            text="+ Adicionar Membro",
-            fg_color="#5A189A",
-            hover_color="#7B2CBF",
-            height=40,
-            width=150,
-            corner_radius=8,
-            font=self.small_font,
-            command=self.adicionar_membro
-        )
-        add_button.pack(side="right")
-        
-        # Frame principal da tabela
-        table_container = ctk.CTkFrame(
-            self.content_frame,
             fg_color="white",
             corner_radius=15
         )
-        table_container.grid(row=1, column=0, sticky="nsew", padx=0, pady=0)
+        self.main_content.grid(row=0, column=1, padx=20, pady=20, sticky="nsew")
+        self.main_content.grid_columnconfigure(0, weight=1)
+        self.main_content.grid_rowconfigure(2, weight=1)
         
-        # Frame para filtros e pesquisa acima da tabela
-        filter_frame = ctk.CTkFrame(
-            table_container,
+        # Título e botões de ação
+        title_frame = ctk.CTkFrame(
+            self.main_content,
             fg_color="transparent"
         )
-        filter_frame.pack(fill="x", padx=20, pady=(20, 10))
+        title_frame.grid(row=0, column=0, padx=20, pady=(20, 10), sticky="ew")
+        title_frame.grid_columnconfigure(0, weight=1)
         
-        # Campo de pesquisa
-        self.search_var = ctk.StringVar()
-        search_field = ctk.CTkEntry(
-            filter_frame,
-            placeholder_text="Buscar membro...",
-            width=250,
-            height=35,
-            font=self.small_font,
-            textvariable=self.search_var
+        title_label = ctk.CTkLabel(
+            title_frame,
+            text="Gerenciamento de Alunos",
+            font=self.title_font,
+            text_color="#333333"
         )
-        search_field.pack(side="left")
+        title_label.grid(row=0, column=0, sticky="w")
+        
+        button_frame = ctk.CTkFrame(
+            title_frame,
+            fg_color="transparent"
+        )
+        button_frame.grid(row=0, column=1, sticky="e")
+        
+        add_button = ctk.CTkButton(
+            button_frame,
+            text="+ Novo Aluno",
+            fg_color="#5A189A",
+            hover_color="#7B2CBF",
+            height=35,
+            width=130,
+            corner_radius=8,
+            command=self.abrir_novo_aluno
+        )
+        add_button.pack(side="left", padx=5)
+        
+        # Barra de pesquisa
+        search_frame = ctk.CTkFrame(
+            self.main_content,
+            fg_color="transparent",
+            height=50
+        )
+        search_frame.grid(row=1, column=0, padx=20, pady=(10, 20), sticky="ew")
+        search_frame.grid_columnconfigure(1, weight=1)
+        
+        search_label = ctk.CTkLabel(
+            search_frame,
+            text="Buscar:",
+            font=self.barlow_font,
+            text_color="#333333"
+        )
+        search_label.grid(row=0, column=0, padx=(0, 10), sticky="w")
+        
+        self.search_var = StringVar()
+        search_entry = ctk.CTkEntry(
+            search_frame,
+            textvariable=self.search_var,
+            height=35,
+            corner_radius=8,
+            border_width=1,
+            placeholder_text="Digite nome, email ou telefone...",
+            font=self.small_font
+        )
+        search_entry.grid(row=0, column=1, sticky="ew")
+        self.search_var.trace_add("write", self.filtrar_alunos)
         
         search_button = ctk.CTkButton(
-            filter_frame,
+            search_frame,
             text="Buscar",
             fg_color="#5A189A",
             hover_color="#7B2CBF",
             height=35,
             width=100,
             corner_radius=8,
-            font=self.small_font,
-            command=self.buscar_membro
+            command=self.filtrar_alunos
         )
-        search_button.pack(side="left", padx=10)
+        search_button.grid(row=0, column=2, padx=(10, 0), sticky="e")
         
-        # Filtro por status
-        status_label = ctk.CTkLabel(
-            filter_frame,
-            text="Status:",
-            font=self.small_font,
-            text_color="black"
-        )
-        status_label.pack(side="left", padx=(20, 5))
-        
-        self.status_var = ctk.StringVar(value="Todos")
-        status_combobox = ctk.CTkComboBox(
-            filter_frame,
-            values=["Todos", "Ativo", "Inativo", "Pendente"],
-            variable=self.status_var,
-            width=150,
-            height=35,
-            font=self.small_font,
-            dropdown_font=self.small_font
-        )
-        status_combobox.pack(side="left")
-        
-        # Frame para a tabela
+        # Criação da tabela de alunos
         table_frame = ctk.CTkFrame(
-            table_container,
+            self.main_content,
             fg_color="transparent"
         )
-        table_frame.pack(fill="both", expand=True, padx=20, pady=20)
+        table_frame.grid(row=2, column=0, padx=20, pady=10, sticky="nsew")
+        table_frame.grid_columnconfigure(0, weight=1)
+        table_frame.grid_rowconfigure(0, weight=1)
         
-        # Configuração da tabela
+        # Tabela com estilo usando ttk.Treeview
         style = ttk.Style()
-        style.configure("Treeview", 
-                        background="#FFFFFF", 
-                        foreground="black", 
-                        rowheight=35, 
-                        fieldbackground="#FFFFFF")
-        style.map('Treeview', background=[('selected', '#9D4EDD')])
-        style.configure("Treeview.Heading", 
-                        font=('Arial', 12, 'bold'),
-                        background="#F0F0F0", 
-                        foreground="black")
+        style.configure("Treeview", font=self.small_font, rowheight=40)
+        style.configure("Treeview.Heading", font=self.barlow_font, background="#E6E6E6")
+        style.map("Treeview", background=[("selected", "#9D4EDD")])
         
-        # Criação da tabela
-        self.tabela = ttk.Treeview(
+        self.tree = ttk.Treeview(
             table_frame,
-            columns=("id", "nome", "email", "telefone", "plano", "status"),
+            columns=("nome", "telefone", "data_nascimento", "endereco", "email", "data_inicio", "plano", "acoes"),
             show="headings",
-            selectmode="browse"
+            height=10
         )
         
-        # Definição das colunas
-        self.tabela.heading("id", text="ID")
-        self.tabela.heading("nome", text="Nome")
-        self.tabela.heading("email", text="E-mail")
-        self.tabela.heading("telefone", text="Telefone")
-        self.tabela.heading("plano", text="Plano")
-        self.tabela.heading("status", text="Status")
+        # Definir cabeçalhos e larguras das colunas
+        self.tree.heading("nome", text="Nome")
+        self.tree.heading("telefone", text="Telefone")
+        self.tree.heading("data_nascimento", text="Data Nasc.")
+        self.tree.heading("endereco", text="Endereço")
+        self.tree.heading("email", text="Email")
+        self.tree.heading("data_inicio", text="Data Início")
+        self.tree.heading("plano", text="Plano")
+        self.tree.heading("acoes", text="Ações")
         
-        # Configuração da largura das colunas
-        self.tabela.column("id", width=60, anchor="center")
-        self.tabela.column("nome", width=200)
-        self.tabela.column("email", width=200)
-        self.tabela.column("telefone", width=150)
-        self.tabela.column("plano", width=150)
-        self.tabela.column("status", width=100, anchor="center")
+        self.tree.column("nome", width=180)
+        self.tree.column("telefone", width=120)
+        self.tree.column("data_nascimento", width=100)
+        self.tree.column("endereco", width=200)
+        self.tree.column("email", width=180)
+        self.tree.column("data_inicio", width=100)
+        self.tree.column("plano", width=120)
+        self.tree.column("acoes", width=120)
         
-        # Scroll vertical
-        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tabela.yview)
-        self.tabela.configure(yscrollcommand=scrollbar.set)
-        scrollbar.pack(side="right", fill="y")
-        self.tabela.pack(side="left", fill="both", expand=True)
+        # Adicionar scrollbar
+        scrollbar = ttk.Scrollbar(table_frame, orient="vertical", command=self.tree.yview)
+        self.tree.configure(yscrollcommand=scrollbar.set)
         
-        # Adicionando dados de exemplo
+        self.tree.grid(row=0, column=0, sticky="nsew")
+        scrollbar.grid(row=0, column=1, sticky="ns")
+        
+        # Adicionar alguns dados de exemplo
         self.carregar_dados_exemplo()
         
-        # Frame para os botões de ação
-        action_frame = ctk.CTkFrame(
-            table_container,
+        # Adicionar contexto para botões de ação
+        self.tree.bind("<Double-1>", self.editar_aluno)
+        
+        # Mostrador de páginas
+        paging_frame = ctk.CTkFrame(
+            self.main_content,
+            fg_color="transparent",
+            height=50
+        )
+        paging_frame.grid(row=3, column=0, padx=20, pady=(10, 20), sticky="ew")
+        
+        prev_button = ctk.CTkButton(
+            paging_frame,
+            text="< Anterior",
+            fg_color="#E6E6E6",
+            text_color="#333333",
+            hover_color="#D0D0D0",
+            height=30,
+            width=100,
+            corner_radius=8
+        )
+        prev_button.pack(side="left")
+        
+        page_label = ctk.CTkLabel(
+            paging_frame,
+            text="Página 1 de 5",
+            font=self.small_font,
+            text_color="#333333"
+        )
+        page_label.pack(side="left", padx=20)
+        
+        next_button = ctk.CTkButton(
+            paging_frame,
+            text="Próximo >",
+            fg_color="#E6E6E6",
+            text_color="#333333",
+            hover_color="#D0D0D0",
+            height=30,
+            width=100,
+            corner_radius=8
+        )
+        next_button.pack(side="left")
+        
+        # Resumo de dados
+        info_frame = ctk.CTkFrame(
+            paging_frame,
             fg_color="transparent"
         )
-        action_frame.pack(fill="x", padx=20, pady=(0, 20))
+        info_frame.pack(side="right")
         
-        # Botões de ação
-        edit_button = ctk.CTkButton(
-            action_frame,
-            text="Editar",
-            fg_color="#7B2CBF",
-            hover_color="#5A189A",
-            height=35,
-            width=120,
-            corner_radius=8,
+        info_label = ctk.CTkLabel(
+            info_frame,
+            text="Total de Alunos: 45",
             font=self.small_font,
-            command=self.editar_membro
+            text_color="#333333"
         )
-        edit_button.pack(side="left", padx=(0, 10))
-        
-        delete_button = ctk.CTkButton(
-            action_frame,
-            text="Remover",
-            fg_color="#E63946",
-            hover_color="#C1121F",
-            height=35,
-            width=120,
-            corner_radius=8,
-            font=self.small_font,
-            command=self.remover_membro
-        )
-        delete_button.pack(side="left")
-        
-        # Estatísticas de membros
-        stats_frame = ctk.CTkFrame(
-            action_frame,
-            fg_color="transparent"
-        )
-        stats_frame.pack(side="right")
-        
-        total_stats = ctk.CTkLabel(
-            stats_frame,
-            text="Total: 342 membros | Ativos: 298 | Inativos: 44",
-            font=self.small_font,
-            text_color="gray"
-        )
-        total_stats.pack()
+        info_label.pack(side="right")
     
-    def criar_botao_menu(self, texto, indice, ativo=False):
-        """Cria um botão na sidebar com estilização adequada"""
-        bg_color = "#9D4EDD" if ativo else "transparent"
-        fg_color = "white" if ativo else "#E0E0E0"
-        
-        btn = ctk.CTkButton(
+    def criar_botao_menu(self, texto, posicao, ativo=False):
+        """Cria um botão no menu lateral"""
+        fg_color = "#7B2CBF" if ativo else "transparent"
+        botao = ctk.CTkButton(
             self.sidebar_frame,
             text=texto,
-            fg_color=bg_color,
-            text_color=fg_color,
+            fg_color=fg_color,
+            text_color="white",
             hover_color="#7B2CBF",
             anchor="w",
             height=40,
-            width=220,
-            corner_radius=8,
             font=self.barlow_font,
-            command=lambda t=texto: self.navegacao_menu(t)
+            corner_radius=8,
+            command=lambda t=texto: self.mudar_tela(t)
         )
-        btn.pack(pady=5, padx=15)
-        return btn
+        botao.pack(fill="x", padx=20, pady=5)
     
-    def navegacao_menu(self, texto):
-        """Função para navegar entre as telas do menu"""
-        # Se o botão clicado for diferente da tela atual, navegar para a tela correspondente
-        if texto == "Dashboard" and self.controller:
-            self.controller.mostrar_frame("dashboard")
-        elif texto == "Membros" and self.controller:
-            self.controller.mostrar_frame("members")
-        elif texto == "Planos" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("plans")
-        elif texto == "Pagamentos" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("payments")
-        elif texto == "Agenda" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("schedule")
-        elif texto == "Funcionários" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("employees")
-        elif texto == "Relatórios" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("reports")
-        elif texto == "Configurações" and self.controller:
-            print(f"Navegando para: {texto}")
-            # self.controller.mostrar_frame("settings")
+    def mudar_tela(self, tela):
+        """Muda para a tela selecionada no menu"""
+        nome_tela = tela.lower()
+        if hasattr(self.controller, "mostrar_frame"):
+            self.controller.mostrar_frame(nome_tela)
     
     def carregar_dados_exemplo(self):
-        """Carrega dados de exemplo na tabela"""
+        """Carrega dados de exemplo para a tabela"""
         # Limpar dados existentes
-        for item in self.tabela.get_children():
-            self.tabela.delete(item)
+        for item in self.tree.get_children():
+            self.tree.delete(item)
         
-        # Adicionar dados de exemplo
+        # Dados de exemplo
         dados = [
-            (1, "João Silva", "joao.silva@email.com", "(11) 98765-4321", "Premium", "Ativo"),
-            (2, "Maria Santos", "maria.santos@email.com", "(11) 97654-3210", "Básico", "Ativo"),
-            (3, "Pedro Almeida", "pedro.almeida@email.com", "(11) 96543-2109", "Standard", "Ativo"),
-            (4, "Ana Oliveira", "ana.oliveira@email.com", "(11) 95432-1098", "Premium", "Inativo"),
-            (5, "Carlos Souza", "carlos.souza@email.com", "(11) 94321-0987", "Standard", "Ativo"),
-            (6, "Juliana Lima", "juliana.lima@email.com", "(11) 93210-9876", "Premium", "Ativo"),
-            (7, "Roberto Pereira", "roberto.pereira@email.com", "(11) 92109-8765", "Básico", "Pendente"),
-            (8, "Fernanda Costa", "fernanda.costa@email.com", "(11) 91098-7654", "Premium", "Ativo"),
-            (9, "Lucas Martins", "lucas.martins@email.com", "(11) 90987-6543", "Standard", "Inativo"),
-            (10, "Mariana Gomes", "mariana.gomes@email.com", "(11) 99876-5432", "Básico", "Ativo"),
-            (11, "Ricardo Ferreira", "ricardo.ferreira@email.com", "(11) 98765-4321", "Premium", "Ativo"),
-            (12, "Camila Rodrigues", "camila.rodrigues@email.com", "(11) 97654-3210", "Standard", "Ativo"),
-            (13, "Bruno Santos", "bruno.santos@email.com", "(11) 96543-2109", "Básico", "Pendente"),
-            (14, "Patrícia Alves", "patricia.alves@email.com", "(11) 95432-1098", "Premium", "Ativo"),
-            (15, "Alexandre Lopes", "alexandre.lopes@email.com", "(11) 94321-0987", "Standard", "Inativo"),
+            ("Ana Silva", "(11) 99999-1234", "15/05/1990", "Rua das Flores, 123", "ana.silva@email.com", "01/01/2023", "Premium"),
+            ("João Santos", "(11) 98888-5678", "22/08/1985", "Av. Principal, 456", "joao.santos@email.com", "15/02/2023", "Básico"),
+            ("Maria Oliveira", "(11) 97777-9012", "10/12/1992", "Rua das Palmeiras, 789", "maria.oliveira@email.com", "05/03/2023", "Premium"),
+            ("Pedro Souza", "(11) 96666-3456", "28/03/1988", "Av. Central, 321", "pedro.souza@email.com", "20/04/2023", "Intermediário"),
+            ("Carla Lima", "(11) 95555-7890", "07/07/1995", "Rua dos Pinheiros, 654", "carla.lima@email.com", "10/05/2023", "Básico"),
+            ("Marcos Pereira", "(11) 94444-1234", "14/10/1983", "Av. das Rosas, 987", "marcos.pereira@email.com", "25/06/2023", "Premium"),
+            ("Juliana Costa", "(11) 93333-5678", "03/02/1991", "Rua das Acácias, 159", "juliana.costa@email.com", "15/07/2023", "Intermediário"),
+            ("Lucas Martins", "(11) 92222-9012", "19/09/1987", "Av. dos Girassóis, 753", "lucas.martins@email.com", "01/08/2023", "Básico"),
         ]
         
-        for dado in dados:
-            self.tabela.insert("", "end", values=dado)
+        # Inserir dados na tabela
+        for i, (nome, telefone, data_nasc, endereco, email, data_inicio, plano) in enumerate(dados):
+            self.tree.insert("", "end", values=(nome, telefone, data_nasc, endereco, email, data_inicio, plano, "Editar / Excluir"))
     
-    def adicionar_membro(self):
-        """Abre a janela para adicionar um novo membro"""
-        self.abrir_janela_membro()
-    
-    def editar_membro(self):
-        """Edita o membro selecionado na tabela"""
-        # Verificar se um item está selecionado
-        item_selecionado = self.tabela.selection()
-        if not item_selecionado:
-            messagebox.showwarning("Aviso", "Selecione um membro para editar.")
-            return
-        
-        # Obter dados do item selecionado
-        item = self.tabela.item(item_selecionado)
-        dados = item['values']
-        
-        # Abrir janela de edição com os dados preenchidos
-        self.abrir_janela_membro(modo_edicao=True, dados=dados)
-    
-    def remover_membro(self):
-        """Remove o membro selecionado na tabela"""
-        # Verificar se um item está selecionado
-        item_selecionado = self.tabela.selection()
-        if not item_selecionado:
-            messagebox.showwarning("Aviso", "Selecione um membro para remover.")
-            return
-        
-        # Confirmar remoção
-        item = self.tabela.item(item_selecionado)
-        dados = item['values']
-        nome = dados[1]
-        
-        confirmacao = messagebox.askyesno("Confirmar Remoção", f"Deseja realmente remover o membro {nome}?")
-        if confirmacao:
-            self.tabela.delete(item_selecionado)
-            messagebox.showinfo("Sucesso", f"Membro {nome} removido com sucesso.")
-    
-    def buscar_membro(self):
-        """Busca membros com base no texto pesquisado"""
+    def filtrar_alunos(self, *args):
+        """Filtra os alunos com base no texto de busca"""
         texto_busca = self.search_var.get().lower()
-        status_filtro = self.status_var.get()
         
-        # Limpar tabela atual
-        for item in self.tabela.get_children():
-            self.tabela.delete(item)
+        # Se estiver vazio, recarregar todos os dados
+        if not texto_busca:
+            self.carregar_dados_exemplo()
+            return
         
-        # Recarregar dados de exemplo para fazer a busca
+        # Limpar tabela
+        for item in self.tree.get_children():
+            self.tree.delete(item)
+        
+        # Carregar dados de exemplo para filtrar
         dados = [
-            (1, "João Silva", "joao.silva@email.com", "(11) 98765-4321", "Premium", "Ativo"),
-            (2, "Maria Santos", "maria.santos@email.com", "(11) 97654-3210", "Básico", "Ativo"),
-            (3, "Pedro Almeida", "pedro.almeida@email.com", "(11) 96543-2109", "Standard", "Ativo"),
-            (4, "Ana Oliveira", "ana.oliveira@email.com", "(11) 95432-1098", "Premium", "Inativo"),
-            (5, "Carlos Souza", "carlos.souza@email.com", "(11) 94321-0987", "Standard", "Ativo"),
-            (6, "Juliana Lima", "juliana.lima@email.com", "(11) 93210-9876", "Premium", "Ativo"),
-            (7, "Roberto Pereira", "roberto.pereira@email.com", "(11) 92109-8765", "Básico", "Pendente"),
-            (8, "Fernanda Costa", "fernanda.costa@email.com", "(11) 91098-7654", "Premium", "Ativo"),
-            (9, "Lucas Martins", "lucas.martins@email.com", "(11) 90987-6543", "Standard", "Inativo"),
-            (10, "Mariana Gomes", "mariana.gomes@email.com", "(11) 99876-5432", "Básico", "Ativo"),
-            (11, "Ricardo Ferreira", "ricardo.ferreira@email.com", "(11) 98765-4321", "Premium", "Ativo"),
-            (12, "Camila Rodrigues", "camila.rodrigues@email.com", "(11) 97654-3210", "Standard", "Ativo"),
-            (13, "Bruno Santos", "bruno.santos@email.com", "(11) 96543-2109", "Básico", "Pendente"),
-            (14, "Patrícia Alves", "patricia.alves@email.com", "(11) 95432-1098", "Premium", "Ativo"),
-            (15, "Alexandre Lopes", "alexandre.lopes@email.com", "(11) 94321-0987", "Standard", "Inativo"),
+            ("Ana Silva", "(11) 99999-1234", "15/05/1990", "Rua das Flores, 123", "ana.silva@email.com", "01/01/2023", "Premium"),
+            ("João Santos", "(11) 98888-5678", "22/08/1985", "Av. Principal, 456", "joao.santos@email.com", "15/02/2023", "Básico"),
+            ("Maria Oliveira", "(11) 97777-9012", "10/12/1992", "Rua das Palmeiras, 789", "maria.oliveira@email.com", "05/03/2023", "Premium"),
+            ("Pedro Souza", "(11) 96666-3456", "28/03/1988", "Av. Central, 321", "pedro.souza@email.com", "20/04/2023", "Intermediário"),
+            ("Carla Lima", "(11) 95555-7890", "07/07/1995", "Rua dos Pinheiros, 654", "carla.lima@email.com", "10/05/2023", "Básico"),
+            ("Marcos Pereira", "(11) 94444-1234", "14/10/1983", "Av. das Rosas, 987", "marcos.pereira@email.com", "25/06/2023", "Premium"),
+            ("Juliana Costa", "(11) 93333-5678", "03/02/1991", "Rua das Acácias, 159", "juliana.costa@email.com", "15/07/2023", "Intermediário"),
+            ("Lucas Martins", "(11) 92222-9012", "19/09/1987", "Av. dos Girassóis, 753", "lucas.martins@email.com", "01/08/2023", "Básico"),
         ]
         
-        # Filtrar dados
-        for dado in dados:
-            # Verificar se o texto de busca está presente em algum campo do membro
-            texto_presente = any(texto_busca in str(campo).lower() for campo in dado)
-            
-            # Verificar filtro de status
-            status_ok = status_filtro == "Todos" or status_filtro == dado[5]
-            
-            # Se passar nos filtros, adicionar à tabela
-            if texto_presente and status_ok:
-                self.tabela.insert("", "end", values=dado)
-    
-    def abrir_janela_membro(self, modo_edicao=False, dados=None):
-        """Abre uma janela para adicionar ou editar um membro"""
+        # Filtrar e inserir dados
+        for nome, telefone, data_nasc, endereco, email, data_inicio, plano in dados:
+            if (texto_busca in nome.lower() or 
+                texto_busca in email.lower() or 
+                texto_busca in telefone.lower()):
+                self.tree.insert("", "end", values=(nome, telefone, data_nasc, endereco, email, data_inicio, plano, "Editar / Excluir"))
+
+    def abrir_novo_aluno(self):
+        """Abre a janela para cadastrar novo aluno"""
         janela = ctk.CTkToplevel(self)
-        janela.title("Editar Membro" if modo_edicao else "Novo Membro")
-        janela.geometry("500x550")
-        janela.resizable(False, False)
+        janela.title("Novo Aluno")
+        janela.geometry("600x650")
         janela.grab_set()  # Torna a janela modal
-        janela.focus_set()
+        
+        # Criar formulário
+        self.criar_formulario_aluno(janela)
+    
+    def editar_aluno(self, event):
+        """Abre a janela para editar um aluno existente"""
+        # Obter o item selecionado
+        item = self.tree.identify_row(event.y)
+        if not item:
+            return
+        
+        # Obter os valores do item selecionado
+        valores = self.tree.item(item, "values")
+        
+        janela = ctk.CTkToplevel(self)
+        janela.title("Editar Aluno")
+        janela.geometry("600x650")
+        janela.grab_set()
+        
+        # Criar formulário preenchido
+        self.criar_formulario_aluno(janela, valores)
+    
+    def criar_formulario_aluno(self, janela, valores=None):
+        """Cria o formulário para cadastro/edição de aluno"""
+        # Determinar se é edição ou novo cadastro
+        modo_edicao = valores is not None
+        titulo = "Editar Aluno" if modo_edicao else "Novo Aluno"
         
         # Frame principal
-        frame_principal = ctk.CTkFrame(janela, fg_color="transparent")
-        frame_principal.pack(fill="both", expand=True, padx=20, pady=20)
+        main_frame = ctk.CTkFrame(janela, fg_color="white")
+        main_frame.pack(fill="both", expand=True, padx=20, pady=20)
         
         # Título
-        titulo = ctk.CTkLabel(
-            frame_principal,
-            text="Editar Membro" if modo_edicao else "Adicionar Novo Membro",
+        titulo_label = ctk.CTkLabel(
+            main_frame,
+            text=titulo,
             font=self.title_font,
-            text_color="black"
+            text_color="#333333"
         )
-        titulo.pack(pady=(0, 20))
+        titulo_label.pack(pady=(20, 30))
         
-        # Campos
-        campos_frame = ctk.CTkFrame(frame_principal, fg_color="transparent")
-        campos_frame.pack(fill="both", expand=True)
+        # Frame para os campos do formulário
+        form_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        form_frame.pack(fill="both", expand=True, padx=20, pady=10)
         
-        # Função para criar campos de formulário
-        def criar_campo(label_texto, valor_padrao="", linha=0):
+        # Definir campos
+        campos = [
+            {"label": "Nome:", "var": StringVar(value=valores[0] if modo_edicao else "")},
+            {"label": "Telefone:", "var": StringVar(value=valores[1] if modo_edicao else "")},
+            {"label": "Data de Nascimento:", "var": StringVar(value=valores[2] if modo_edicao else ""), "tipo": "data"},
+            {"label": "Endereço:", "var": StringVar(value=valores[3] if modo_edicao else "")},
+            {"label": "Email:", "var": StringVar(value=valores[4] if modo_edicao else "")},
+            {"label": "Data de Início:", "var": StringVar(value=valores[5] if modo_edicao else ""), "tipo": "data"},
+            {"label": "Plano:", "var": StringVar(value=valores[6] if modo_edicao else "Básico"), "tipo": "combobox", 
+             "opcoes": ["Básico", "Intermediário", "Premium"]}
+        ]
+        
+        # Criar campos do formulário
+        for i, campo in enumerate(campos):
+            frame = ctk.CTkFrame(form_frame, fg_color="transparent")
+            frame.pack(fill="x", pady=10)
+            
             label = ctk.CTkLabel(
-                campos_frame,
-                text=label_texto,
-                font=self.small_font,
-                text_color="black"
+                frame,
+                text=campo["label"],
+                font=self.barlow_font,
+                text_color="#333333",
+                width=150,
+                anchor="w"
             )
-            label.grid(row=linha, column=0, sticky="w", pady=(10, 5))
+            label.pack(side="left")
             
-            entry = ctk.CTkEntry(
-                campos_frame,
-                height=35,
-                width=400,
-                font=self.small_font
-            )
-            entry.grid(row=linha+1, column=0, sticky="ew", pady=(0, 10))
+            if campo.get("tipo") == "data":
+                # Se tiver DateEntry disponível, usar ele
+                try:
+                    entry = DateEntry(
+                        frame,
+                        width=20,
+                        background="#5A189A",
+                        foreground="white",
+                        date_pattern="dd/mm/yyyy"
+                    )
+                    try:
+                        if modo_edicao and campo["var"].get():
+                            dia, mes, ano = campo["var"].get().split("/")
+                            entry.set_date(datetime.date(int(ano), int(mes), int(dia)))
+                    except:
+                        pass
+                except:
+                    # Fallback para entry normal
+                    entry = ctk.CTkEntry(
+                        frame,
+                        textvariable=campo["var"],
+                        width=400,
+                        height=35,
+                        corner_radius=8,
+                        border_width=1
+                    )
+                    
+            elif campo.get("tipo") == "combobox":
+                entry = ctk.CTkComboBox(
+                    frame,
+                    values=campo["opcoes"],
+                    variable=campo["var"],
+                    width=400,
+                    height=35,
+                    corner_radius=8,
+                    border_width=1
+                )
+            else:
+                entry = ctk.CTkEntry(
+                    frame,
+                    textvariable=campo["var"],
+                    width=400,
+                    height=35,
+                    corner_radius=8,
+                    border_width=1
+                )
             
-            if valor_padrao:
-                entry.insert(0, valor_padrao)
-                
-            return entry
-        
-        # Campos do formulário
-        nome_entry = criar_campo("Nome completo:", dados[1] if dados else "", 0)
-        email_entry = criar_campo("E-mail:", dados[2] if dados else "", 2)
-        telefone_entry = criar_campo("Telefone:", dados[3] if dados else "", 4)
-        
-        # Seleção de plano
-        plano_label = ctk.CTkLabel(
-            campos_frame,
-            text="Plano:",
-            font=self.small_font,
-            text_color="black"
-        )
-        plano_label.grid(row=6, column=0, sticky="w", pady=(10, 5))
-        
-        plano_var = ctk.StringVar(value=dados[4] if dados else "Básico")
-        plano_combobox = ctk.CTkComboBox(
-            campos_frame,
-            values=["Básico", "Standard", "Premium"],
-            variable=plano_var,
-            width=400,
-            height=35,
-            font=self.small_font,
-            dropdown_font=self.small_font
-        )
-        plano_combobox.grid(row=7, column=0, sticky="ew", pady=(0, 10))
-        
-        # Seleção de status
-        status_label = ctk.CTkLabel(
-            campos_frame,
-            text="Status:",
-            font=self.small_font,
-            text_color="black"
-        )
-        status_label.grid(row=8, column=0, sticky="w", pady=(10, 5))
-        
-        status_var = ctk.StringVar(value=dados[5] if dados else "Ativo")
-        status_frame = ctk.CTkFrame(campos_frame, fg_color="transparent")
-        status_frame.grid(row=9, column=0, sticky="ew", pady=(0, 10))
-        
-        # Opções de status como radiobuttons
-        status_ativo = ctk.CTkRadioButton(
-            status_frame,
-            text="Ativo",
-            variable=status_var,
-            value="Ativo",
-            font=self.small_font,
-            fg_color="#5A189A"
-        )
-        status_ativo.pack(side="left", padx=(0, 20))
-        
-        status_inativo = ctk.CTkRadioButton(
-            status_frame,
-            text="Inativo",
-            variable=status_var,
-            value="Inativo",
-            font=self.small_font,
-            fg_color="#5A189A"
-        )
-        status_inativo.pack(side="left", padx=(0, 20))
-        
-        status_pendente = ctk.CTkRadioButton(
-            status_frame,
-            text="Pendente",
-            variable=status_var,
-            value="Pendente",
-            font=self.small_font,
-            fg_color="#5A189A"
-        )
-        status_pendente.pack(side="left")
+            entry.pack(side="left", fill="x", expand=True)
         
         # Botões de ação
-        botoes_frame = ctk.CTkFrame(frame_principal, fg_color="transparent")
-        botoes_frame.pack(fill="x", pady=(20, 0))
+        button_frame = ctk.CTkFrame(main_frame, fg_color="transparent")
+        button_frame.pack(fill="x", pady=20)
         
-        # Função para salvar o membro
-        def salvar_membro():
-            # Aqui você implementaria a lógica para salvar os dados
-            # Por simplicidade, vamos apenas mostrar uma mensagem
-            if modo_edicao:
-                messagebox.showinfo("Sucesso", f"Membro {nome_entry.get()} atualizado com sucesso!")
-            else:
-                messagebox.showinfo("Sucesso", f"Membro {nome_entry.get()} adicionado com sucesso!")
-            janela.destroy()
-        
-        cancelar_button = ctk.CTkButton(
-            botoes_frame,
+        cancelar_btn = ctk.CTkButton(
+            button_frame,
             text="Cancelar",
-            fg_color="#E0E0E0",
-            text_color="black",
-            hover_color="#C0C0C0",
+            fg_color="#E6E6E6",
+            text_color="#333333",
+            hover_color="#D0D0D0",
             height=40,
-            width=180,
+            width=150,
             corner_radius=8,
-            font=self.small_font,
             command=janela.destroy
         )
-        cancelar_button.pack(side="left", padx=(0, 10))
+        cancelar_btn.pack(side="left", padx=(0, 10))
         
-        salvar_button = ctk.CTkButton(
-            botoes_frame,
+        salvar_btn = ctk.CTkButton(
+            button_frame,
             text="Salvar",
             fg_color="#5A189A",
             hover_color="#7B2CBF",
             height=40,
-            width=180,
+            width=150,
             corner_radius=8,
-            font=self.small_font,
-            command=salvar_membro
+            command=lambda: self.salvar_aluno(janela, campos, modo_edicao)
         )
-        salvar_button.pack(side="left")
+        salvar_btn.pack(side="left")
+    
+    def salvar_aluno(self, janela, campos, modo_edicao):
+        """Salva os dados do aluno e fecha a janela"""
+        # Aqui você implementaria a lógica para salvar os dados
+        # Por enquanto, apenas fechamos a janela
+        janela.destroy()
+        
+        # Recarregar dados de exemplo (simulação)
+        self.carregar_dados_exemplo()
