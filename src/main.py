@@ -5,7 +5,7 @@ from controller.admin.admin_controller import AdminController
 from views.auth.login_frame import LoginFrame
 from views.auth.register_frame import RegisterFrame
 from views.admin.dashboard import DashboardFrame
-from views.admin.add_student import AlunosFrame
+from views.admin.student import AlunosFrame
 
 class MainApp:
     def __init__(self):
