@@ -51,12 +51,9 @@ class DashboardFrame(ctk.CTkFrame):
         # Itens do menu
         self.criar_botao_menu("Dashboard", 0, True)
         self.criar_botao_menu("Membros", 1)
-        self.criar_botao_menu("Planos", 2)
-        self.criar_botao_menu("Pagamentos", 3)
-        self.criar_botao_menu("Agenda", 4)
-        self.criar_botao_menu("Funcionários", 5)
-        self.criar_botao_menu("Relatórios", 6)
-        self.criar_botao_menu("Configurações", 7)
+        self.criar_botao_menu("Agenda", 2)
+        self.criar_botao_menu("Funcionários", 3)
+        self.criar_botao_menu("Configurações", 4)
         
         # Informações do usuário no rodapé da sidebar
         user_frame = ctk.CTkFrame(

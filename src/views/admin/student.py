@@ -231,24 +231,14 @@ class AlunosFrame(ctk.CTkFrame):
         scrollbar.grid(row=0, column=1, sticky="ns")
         
         self.carregar_dados_exemplo()
-        
-        self.tree.bind("<Double-1>", self.editar_aluno)
     
     def navegacao_menu(self, texto):
         if texto == "Membros" and self.controller:
             self.controller.mostrar_frame("members")
         elif texto == "Dashboard" and self.controller:
             self.controller.mostrar_frame("dashboard")
-        elif texto == "Planos" and self.controller:
-            self.controller.mostrar_frame("plans")
-        elif texto == "Pagamentos" and self.controller:
-            self.controller.mostrar_frame("payments")
         elif texto == "Agenda" and self.controller:
             self.controller.mostrar_frame("schedule")
-        elif texto == "Funcionários" and self.controller:
-            self.controller.mostrar_frame("employees")
-        elif texto == "Relatórios" and self.controller:
-            self.controller.mostrar_frame("reports")
         elif texto == "Configurações" and self.controller:
             self.controller.mostrar_frame("settings")
     
