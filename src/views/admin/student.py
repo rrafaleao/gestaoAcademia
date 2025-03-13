@@ -2,12 +2,14 @@ import customtkinter as ctk
 from tkinter import ttk, StringVar
 import datetime
 from tkcalendar import DateEntry
+from database.db_connection import GerenciadorBancoDados
 
 class AlunosFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F0F0F0", corner_radius=0)
         
         self.controller = controller
+        self.db = GerenciadorBancoDados()
         
         try:
             self.barlow_font = ctk.CTkFont(family="Barlow", size=16, weight="bold")
@@ -46,12 +48,9 @@ class AlunosFrame(ctk.CTkFrame):
         
         self.criar_botao_menu("Dashboard", 0)
         self.criar_botao_menu("Membros", 1, True)
-        self.criar_botao_menu("Planos", 2)
-        self.criar_botao_menu("Pagamentos", 3)
-        self.criar_botao_menu("Agenda", 4)
-        self.criar_botao_menu("Funcionários", 5)
-        self.criar_botao_menu("Relatórios", 6)
-        self.criar_botao_menu("Configurações", 7)
+        self.criar_botao_menu("Agenda", 2)
+        self.criar_botao_menu("Funcionários", 3)
+        self.criar_botao_menu("Configurações", 4)
         
         user_frame = ctk.CTkFrame(
             self.sidebar_frame,
@@ -145,47 +144,6 @@ class AlunosFrame(ctk.CTkFrame):
         )
         add_button.pack(side="left", padx=5)
         
-        search_frame = ctk.CTkFrame(
-            self.main_content,
-            fg_color="transparent",
-            height=50
-        )
-        search_frame.grid(row=1, column=0, padx=20, pady=10, sticky="ew")
-        search_frame.grid_columnconfigure(1, weight=1)
-        
-        search_label = ctk.CTkLabel(
-            search_frame,
-            text="Buscar:",
-            font=self.barlow_font,
-            text_color="#333333"
-        )
-        search_label.grid(row=0, column=0, padx=(0, 10), sticky="w")
-        
-        self.search_var = StringVar()
-        search_entry = ctk.CTkEntry(
-            search_frame,
-            textvariable=self.search_var,
-            height=35,
-            corner_radius=8,
-            border_width=1,
-            placeholder_text="Digite nome, email ou telefone...",
-            font=self.small_font
-        )
-        search_entry.grid(row=0, column=1, sticky="ew")
-        self.search_var.trace_add("write", self.filtrar_alunos)
-        
-        search_button = ctk.CTkButton(
-            search_frame,
-            text="Buscar",
-            fg_color="#5A189A",
-            hover_color="#7B2CBF",
-            height=35,
-            width=100,
-            corner_radius=8,
-            command=self.filtrar_alunos
-        )
-        search_button.grid(row=0, column=2, padx=(10, 0), sticky="e")
-        
         table_frame = ctk.CTkFrame(
             self.main_content,
             fg_color="transparent"
@@ -238,7 +196,7 @@ class AlunosFrame(ctk.CTkFrame):
         elif texto == "Dashboard" and self.controller:
             self.controller.mostrar_frame("dashboard")
         elif texto == "Agenda" and self.controller:
-            self.controller.mostrar_frame("schedule")
+            self.controller.mostrar_frame("agendar")
         elif texto == "Configurações" and self.controller:
             self.controller.mostrar_frame("settings")
     
@@ -263,24 +221,29 @@ class AlunosFrame(ctk.CTkFrame):
         return btn
     
     def carregar_dados_exemplo(self):
+        """Carrega dados reais do banco de dados"""
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        dados = [
-            ("Ana Silva", "(11) 99999-1234", "15/05/1990", "Rua das Flores, 123", "ana.silva@email.com", "01/01/2023", "Premium"),
-            ("João Santos", "(11) 98888-5678", "22/08/1985", "Av. Principal, 456", "joao.santos@email.com", "15/02/2023", "Básico"),
-            ("Maria Oliveira", "(11) 97777-9012", "10/12/1992", "Rua das Palmeiras, 789", "maria.oliveira@email.com", "05/03/2023", "Premium"),
-            ("Pedro Souza", "(11) 96666-3456", "28/03/1988", "Av. Central, 321", "pedro.souza@email.com", "20/04/2023", "Intermediário"),
-            ("Carla Lima", "(11) 95555-7890", "07/07/1995", "Rua dos Pinheiros, 654", "carla.lima@email.com", "10/05/2023", "Básico"),
-            ("Marcos Pereira", "(11) 94444-1234", "14/10/1983", "Av. das Rosas, 987", "marcos.pereira@email.com", "25/06/2023", "Premium"),
-            ("Juliana Costa", "(11) 93333-5678", "03/02/1991", "Rua das Acácias, 159", "juliana.costa@email.com", "15/07/2023", "Intermediário"),
-            ("Lucas Martins", "(11) 92222-9012", "19/09/1987", "Av. dos Girassóis, 753", "lucas.martins@email.com", "01/08/2023", "Básico"),
-        ]
+        # Busca todos os clientes no banco
+        resultados = self.db.executar_consulta(
+            "SELECT nome, telefone, data_nascimento, endereco, email, data_inicio, plano FROM clientes"
+        )
+        self.db.desconectar()
         
-        for nome, telefone, data_nasc, endereco, email, data_inicio, plano in dados:
-            self.tree.insert("", "end", values=(nome, telefone, data_nasc, endereco, email, data_inicio, plano, "Editar / Excluir"))
+        if resultados:
+            for row in resultados:
+                # Formata datas para dd/mm/yyyy
+                data_nasc = row[2].strftime("%d/%m/%Y") if row[2] else ""
+                data_inicio = row[5].strftime("%d/%m/%Y") if row[5] else ""
+                
+                self.tree.insert(
+                    "", "end", 
+                    values=(row[0], row[1], data_nasc, row[3], row[4], data_inicio, row[6], "Editar / Excluir")
+                )
     
     def filtrar_alunos(self, *args):
+        """Filtra alunos com base na busca"""
         texto_busca = self.search_var.get().lower()
         
         if not texto_busca:
@@ -290,19 +253,26 @@ class AlunosFrame(ctk.CTkFrame):
         for item in self.tree.get_children():
             self.tree.delete(item)
         
-        dados = [
-            ("Ana Silva", "(11) 99999-1234", "15/05/1990", "Rua das Flores, 123", "ana.silva@email.com", "01/01/2023", "Premium"),
-            ("João Santos", "(11) 98888-5678", "22/08/1985", "Av. Principal, 456", "joao.santos@email.com", "15/02/2023", "Básico"),
-            ("Maria Oliveira", "(11) 97777-9012", "10/12/1992", "Rua das Palmeiras, 789", "maria.oliveira@email.com", "05/03/2023", "Premium"),
-            ("Pedro Souza", "(11) 96666-3456", "28/03/1988", "Av. Central, 321", "pedro.souza@email.com", "20/04/2023", "Intermediário"),
-            ("Carla Lima", "(11) 95555-7890", "07/07/1995", "Rua dos Pinheiros, 654", "carla.lima@email.com", "10/05/2023", "Básico"),
-            ("Marcos Pereira", "(11) 94444-1234", "14/10/1983", "Av. das Rosas, 987", "marcos.pereira@email.com", "25/06/2023", "Premium"),
-            ("Juliana Costa", "(11) 93333-5678", "03/02/1991", "Rua das Acácias, 159", "juliana.costa@email.com", "15/07/2023", "Intermediário"),
-            ("Lucas Martins", "(11) 92222-9012", "19/09/1987", "Av. dos Girassóis, 753", "lucas.martins@email.com", "01/08/2023", "Básico"),
-        ]
+        # Busca filtrada no banco
+        search_term = f"%{texto_busca}%"
+        query = """
+            SELECT nome, telefone, data_nascimento, endereco, email, data_inicio, plano 
+            FROM clientes 
+            WHERE LOWER(nome) LIKE %s 
+            OR LOWER(email) LIKE %s 
+            OR telefone LIKE %s
+        """
+        params = (search_term, search_term, search_term)
         
-        for nome, telefone, data_nasc, endereco, email, data_inicio, plano in dados:
-            if (texto_busca in nome.lower() or 
-                texto_busca in email.lower() or 
-                texto_busca in telefone.lower()):
-                self.tree.insert("", "end", values=(nome, telefone, data_nasc, endereco, email, data_inicio, plano, "Editar / Excluir"))
+        resultados = self.db.executar_consulta(query, params)
+        self.db.desconectar()
+        
+        if resultados:
+            for row in resultados:
+                data_nasc = row[2].strftime("%d/%m/%Y") if row[2] else ""
+                data_inicio = row[5].strftime("%d/%m/%Y") if row[5] else ""
+                
+                self.tree.insert(
+                    "", "end", 
+                    values=(row[0], row[1], data_nasc, row[3], row[4], data_inicio, row[6], "Editar / Excluir")
+                )
