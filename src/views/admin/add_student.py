@@ -421,7 +421,6 @@ class NovoAlunoFrame(ctk.CTkFrame):
         ).pack(pady=10)
 
     def navegacao_menu(self, texto):
-        # Adicionado para compatibilidade com o Old_alunosframe
         if texto == "Membros" and self.controller:
             self.controller.mostrar_frame("members")
         elif texto == "Dashboard" and self.controller:

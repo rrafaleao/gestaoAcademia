@@ -317,6 +317,8 @@ class DashboardFrame(ctk.CTkFrame):
             self.controller.mostrar_frame("members")
         elif texto == "Dashboard" and self.controller:
             self.controller.mostrar_frame("dashboard")
+        elif texto == "Agenda" and self.controller:
+            self.controller.mostrar_frame("agendar")
     
     def create_large_metric_card(self, parent, row, column, title, value, subtitle, color, icon_type=None):
         """Cria um card grande para métricas principais"""
