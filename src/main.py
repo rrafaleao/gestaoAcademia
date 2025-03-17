@@ -8,6 +8,7 @@ from views.admin.dashboard import DashboardFrame
 from views.admin.student import AlunosFrame
 from views.admin.add_student import NovoAlunoFrame
 from views.admin.schedule import TelaAgendamentoAulas
+from views.admin.config import TelaConfiguracao
 
 class MainApp:
     def __init__(self):
@@ -42,6 +43,7 @@ class MainApp:
         members_frame = AlunosFrame(self.container, self)
         add_student_frame = NovoAlunoFrame(self.container, self)
         agendar_frame = TelaAgendamentoAulas(self.container, self)  # Novo frame
+        config_frame = TelaConfiguracao(self.container, self)
 
         self.frames = {
             "login": login_frame,
@@ -49,7 +51,8 @@ class MainApp:
             "dashboard": dashboard_frame,
             "members": members_frame,
             "novo_aluno": add_student_frame,
-            "agendar": agendar_frame  # Adicione esta linha
+            "agendar": agendar_frame,
+            "config": config_frame
         }
 
         # Configura posicionamento dos frames

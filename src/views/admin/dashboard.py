@@ -1,12 +1,21 @@
 import customtkinter as ctk
 from tkinter import StringVar
 import datetime
+from database.db_connection import GerenciadorBancoDados
 
 class DashboardFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F0F0F0", corner_radius=0)
         
         self.controller = controller
+        try:
+            self.db_connection = GerenciadorBancoDados()
+            # Verificar se a conexão foi estabelecida corretamente
+            if not self.db_connection.conexao:
+                print("Aviso: Conexão com o banco de dados não foi estabelecida")
+        except Exception as e:
+            print(f"Erro ao inicializar conexão com o banco de dados: {e}")
+            self.db_connection = None
         
         # Configuração da fonte
         try:
@@ -52,8 +61,7 @@ class DashboardFrame(ctk.CTkFrame):
         self.criar_botao_menu("Dashboard", 0, True)
         self.criar_botao_menu("Membros", 1)
         self.criar_botao_menu("Agenda", 2)
-        self.criar_botao_menu("Funcionários", 3)
-        self.criar_botao_menu("Configurações", 4)
+        self.criar_botao_menu("Configurações", 3)
         
         # Informações do usuário no rodapé da sidebar
         user_frame = ctk.CTkFrame(
@@ -158,22 +166,23 @@ class DashboardFrame(ctk.CTkFrame):
         metrics_frame.grid_rowconfigure(0, weight=1)
         
         # Card de Total de Membros - Esquerda
+        total_membros = self.get_total_membros()
         self.create_large_metric_card(
-            metrics_frame, 
-            0, 0, 
-            "Total de Membros", 
-            "342", 
-            "Membros ativos na academia", 
-            "#5A189A",
-            "user"
-        )
-        
+        metrics_frame, 
+        0, 0, 
+        "Total de Membros", 
+        str(total_membros),  # Converte o número para string
+        "Membros ativos na academia", 
+        "#5A189A",
+        "user"
+    )
+            
         # Card de Receita Mensal - Direita
         self.create_large_metric_card(
             metrics_frame, 
             0, 1, 
             "Receita Mensal", 
-            "R$ 24.850,00", 
+            "R$ 0,00", 
             "Faturamento do mês atual", 
             "#7B2CBF",
             "money"
@@ -313,13 +322,39 @@ class DashboardFrame(ctk.CTkFrame):
         return btn
     
     def navegacao_menu(self, texto):
-        if texto == "Membros" and self.controller:
-            self.controller.mostrar_frame("members")
-        elif texto == "Dashboard" and self.controller:
+        if texto == "Dashboard":
             self.controller.mostrar_frame("dashboard")
-        elif texto == "Agenda" and self.controller:
+        elif texto == "Membros":
+            self.controller.mostrar_frame("members")
+        elif texto == "Agenda":
             self.controller.mostrar_frame("agendar")
-    
+        elif texto == "Configurações":
+            self.controller.mostrar_frame("config")
+
+    def get_total_membros(self):
+        try:
+            # Verificar se o controller tem uma conexão com o banco de dados
+            if hasattr(self.controller, 'db_connection') and self.controller.db_connection:
+                conexao = self.controller.db_connection.conexao
+            else:
+                # Usar a conexão local se disponível
+                conexao = self.db_connection.conexao if self.db_connection else None
+                
+            if not conexao:
+                print("Não foi possível obter uma conexão válida com o banco de dados")
+                return 0
+                
+            cursor = conexao.cursor()
+            cursor.execute("SELECT COUNT(*) FROM clientes")
+            result = cursor.fetchone()
+            return result[0] if result else 0
+        except Exception as e:
+            print(f"Erro ao buscar total de membros: {e}")
+            return 0
+        finally:
+            if 'cursor' in locals() and cursor:
+                cursor.close()
+        
     def create_large_metric_card(self, parent, row, column, title, value, subtitle, color, icon_type=None):
         """Cria um card grande para métricas principais"""
         card = ctk.CTkFrame(
@@ -385,3 +420,17 @@ class DashboardFrame(ctk.CTkFrame):
                 text_color=color
             )
             icon_label.place(relx=0.5, rely=0.5, anchor="center")
+
+    def atualizar_total_membros(self):
+        """Atualiza o valor do total de membros no card"""
+        total_membros = self.get_total_membros()
+
+        # Encontrar e atualizar o label de valor no card de membros
+        for widget in self.winfo_children():
+            if isinstance(widget, ctk.CTkFrame):
+                for child in widget.winfo_children():
+                    if isinstance(child, ctk.CTkFrame) and hasattr(child, 'winfo_children'):
+                        for grandchild in child.winfo_children():
+                            if isinstance(grandchild, ctk.CTkLabel) and grandchild.cget("text").isdigit():
+                                grandchild.configure(text=str(total_membros))
+                                return

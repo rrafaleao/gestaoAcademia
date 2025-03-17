@@ -3,11 +3,6 @@ from tkcalendar import DateEntry
 import datetime
 from database.db_connection import GerenciadorBancoDados
 
-import customtkinter as ctk
-from tkcalendar import DateEntry
-import datetime
-from database.db_connection import GerenciadorBancoDados
-
 class NovoAlunoFrame(ctk.CTkFrame):
     def __init__(self, parent, controller):
         super().__init__(parent, fg_color="#F9F9F9", corner_radius=0)
@@ -62,8 +57,7 @@ class NovoAlunoFrame(ctk.CTkFrame):
         self.criar_botao_menu("Dashboard", 0)
         self.criar_botao_menu("Membros", 1, True)
         self.criar_botao_menu("Agenda", 2)
-        self.criar_botao_menu("Funcionários", 3)
-        self.criar_botao_menu("Configurações", 4)
+        self.criar_botao_menu("Configurações", 3)
         
         user_frame = ctk.CTkFrame(
             self.sidebar_frame,

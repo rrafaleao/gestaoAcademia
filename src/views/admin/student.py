@@ -49,8 +49,7 @@ class AlunosFrame(ctk.CTkFrame):
         self.criar_botao_menu("Dashboard", 0)
         self.criar_botao_menu("Membros", 1, True)
         self.criar_botao_menu("Agenda", 2)
-        self.criar_botao_menu("Funcionários", 3)
-        self.criar_botao_menu("Configurações", 4)
+        self.criar_botao_menu("Configurações", 3)
         
         user_frame = ctk.CTkFrame(
             self.sidebar_frame,
@@ -198,7 +197,7 @@ class AlunosFrame(ctk.CTkFrame):
         elif texto == "Agenda" and self.controller:
             self.controller.mostrar_frame("agendar")
         elif texto == "Configurações" and self.controller:
-            self.controller.mostrar_frame("settings")
+            self.controller.mostrar_frame("config")
     
     def criar_botao_menu(self, texto, indice, ativo=False):
         bg_color = "#9D4EDD" if ativo else "transparent"
